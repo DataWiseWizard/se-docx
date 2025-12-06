@@ -5,13 +5,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import './App.css'
 
-// const Dashboard = () => (
-//   <div className="p-10 text-center">
-//     <h1 className="text-3xl font-bold">Secure Dashboard</h1>
-//     <p>Welcome to the encrypted zone.</p>
-//   </div>
-// );
-
 function App() {
   return (
     <AuthProvider>
