@@ -36,7 +36,7 @@ const Dashboard = () => {
         setIsInfoOpen(true);
     };
 
-    const fetchDocuments = async () => {
+    const fetchDocuments = async (search = '') => {
         try {
             setLoading(true);
             const url = search ? `/documents?search=${search}` : '/documents';
@@ -79,7 +79,7 @@ const Dashboard = () => {
             await api.post('/documents/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            fetchDocuments(); // Refresh list
+            fetchDocuments(searchTerm); // Refresh list
         } catch (error) {
             alert('Upload failed');
         } finally {
