@@ -53,12 +53,16 @@ exports.uploadDocument = async (req, res) => {
         uploadStream.on('finish', async () => {
             // 5. Save Metadata to "Documents" collection
             try {
+                let folderId = req.body.folderId;
+                if (folderId === 'root' || folderId === 'null') folderId = null;
+                
                 const newDoc = await Document.create({
                     owner: req.user.id,
                     fileName: req.file.originalname,
                     fileType: req.file.mimetype,
                     size: req.file.size,
                     gridFsId: gridFsId,
+                    folder: folderId,
                     encryption: {
                         iv,
                         authTag,

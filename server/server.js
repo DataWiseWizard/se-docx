@@ -11,7 +11,7 @@ const connectDB = require('./config/db');
 const documentRoutes = require('./routes/documentRoutes');
 const authRoutes = require('./routes/authRoutes');
 const auditRoutes = require('./routes/auditRoutes');
-
+const folderRoutes = require('./routes/folderRoutes');
 const app = express();
 
 connectDB();
@@ -50,6 +50,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/folders', folderRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
