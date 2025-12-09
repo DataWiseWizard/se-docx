@@ -263,3 +263,33 @@ exports.shareDocument = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+// @desc    Rename Document
+// @route   PUT /api/documents/:id/rename
+// @access  Private (Owner Only)
+exports.renameDocument = async (req, res) => {
+    try {
+        const { newName } = req.body;
+        const doc = await Document.findById(req.params.id);
+
+        if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+        if (doc.owner.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to rename' });
+        }
+
+        const oldExt = doc.fileName.split('.').pop();
+        const newExt = newName.split('.').pop();
+        
+        if (oldExt !== newExt) {
+            return res.status(400).json({ message: `You cannot change the file extension (.${oldExt})` });
+        }
+
+        doc.fileName = newName;
+        await doc.save();
+
+        res.status(200).json({ message: 'Document renamed', fileName: newName });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};

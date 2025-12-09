@@ -2,14 +2,14 @@ import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../utils/api';
 import ProfileMenu from '../components/ProfileMenu';
+import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
 import { LuUpload } from "react-icons/lu";
 import { ImFileText2 } from "react-icons/im";
 import { MdOutlineShare } from "react-icons/md";
-
-
+import { BsInfoCircle } from "react-icons/bs";
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -19,6 +19,7 @@ const Dashboard = () => {
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState(null);
     const [showLogs, setShowLogs] = useState(false);
+    const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [logs, setLogs] = useState([]);
     const navigate = useNavigate();
 
@@ -26,6 +27,11 @@ const Dashboard = () => {
         const { data } = await api.get('/audit');
         setLogs(data);
         setShowLogs(true);
+    };
+
+    const openInfoModal = (doc) => {
+        setSelectedDoc(doc);
+        setIsInfoOpen(true);
     };
 
     // 1. Fetch Documents on Load
@@ -110,7 +116,7 @@ const Dashboard = () => {
                         user={user}
                         onLogout={logout}
                         onOpenLogs={() => {
-                            fetchLogs(); 
+                            fetchLogs();
                             // We don't need setShowLogs(true) here because fetchLogs does it,
                             // but if your fetchLogs doesn't set it, add setShowLogs(true) here.
                         }}
@@ -185,6 +191,13 @@ const Dashboard = () => {
                                             <GoEye className="h-4 w-4" />
                                         </button>
                                         <button
+                                            onClick={() => openInfoModal(doc)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                            title="File Info & Rename"
+                                        >
+                                            <BsInfoCircle className="h-4 w-4" />
+                                        </button>
+                                        <button
                                             onClick={() => openShareModal(doc)}
                                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
                                             title="Share Access"
@@ -226,6 +239,12 @@ const Dashboard = () => {
                     </div>
                 )}
             </main>
+            <FileInfoModal
+                isOpen={isInfoOpen}
+                onClose={() => setIsInfoOpen(false)}
+                doc={selectedDoc}
+                onRenameSuccess={fetchDocuments} // Refresh the table after rename
+            />
             <ShareModal
                 isOpen={isShareOpen}
                 onClose={() => setIsShareOpen(false)}
