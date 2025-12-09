@@ -4,6 +4,7 @@ import api from '../utils/api';
 import ProfileMenu from '../components/ProfileMenu';
 import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
+import CreateFolderModal from '../components/CreateFOlderModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
 import { LuUpload } from "react-icons/lu";
@@ -11,6 +12,10 @@ import { ImFileText2 } from "react-icons/im";
 import { MdOutlineShare } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { AiOutlineFileSearch } from "react-icons/ai";
+import { HiOutlineChevronRight } from "react-icons/hi2";
+import { IoFolderOutline } from "react-icons/io5";
+import { RiHome9Line } from "react-icons/ri";
+import { TbFolderPlus } from "react-icons/tb";
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -23,6 +28,11 @@ const Dashboard = () => {
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [logs, setLogs] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const [folders, setFolders] = useState([]);
+    const [currentFolder, setCurrentFolder] = useState(null);
+    const [folderPath, setFolderPath] = useState([]);
+    const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const navigate = useNavigate();
 
     const fetchLogs = async () => {
@@ -36,36 +46,35 @@ const Dashboard = () => {
         setIsInfoOpen(true);
     };
 
-    const fetchDocuments = async (search = '') => {
+    const fetchContent = async (folderId = currentFolder?._id) => {
         try {
             setLoading(true);
-            const url = search ? `/documents?search=${search}` : '/documents';
-            const { data } = await api.get(url);
-            setDocuments(data);
+
+            if (searchTerm) {
+                const { data } = await api.get(`/documents?search=${searchTerm}`);
+                setDocuments(data);
+                setFolders([]);
+                return;
+            }
+            const endpoint = folderId ? `/folders/${folderId}` : '/folders/root';
+            const { data } = await api.get(endpoint);
+
+            setFolders(data.folders);
+            setDocuments(data.documents);
         } catch (error) {
-            console.error("Failed to fetch docs", error);
+            console.error("Failed to fetch content", error);
         } finally {
             setLoading(false);
         }
     };
-
     useEffect(() => {
-        // Wait 500ms after the user stops typing
-        const delayDebounceFn = setTimeout(() => {
-            fetchDocuments(searchTerm);
-        }, 500);
-
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm]);
+        fetchContent();
+    }, [currentFolder, searchTerm]);
 
     const openShareModal = (doc) => {
         setSelectedDoc(doc);
         setIsShareOpen(true);
     };
-
-    useEffect(() => {
-        fetchDocuments();
-    }, []);
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
@@ -73,13 +82,13 @@ const Dashboard = () => {
 
         const formData = new FormData();
         formData.append('file', file);
-
+        formData.append('folderId', currentFolder ? currentFolder._id : 'root');
         setUploading(true);
         try {
             await api.post('/documents/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            fetchDocuments(searchTerm); // Refresh list
+            fetchContent();
         } catch (error) {
             alert('Upload failed');
         } finally {
@@ -113,6 +122,30 @@ const Dashboard = () => {
         }
     }
 
+    const handleEnterFolder = (folder) => {
+        // Add current folder to path history before moving
+        if (currentFolder) {
+            setFolderPath([...folderPath, currentFolder]);
+        } else {
+            // If creating path from root
+            setFolderPath([...folderPath, { _id: 'root', name: 'Home' }]);
+        }
+        setCurrentFolder(folder);
+        setSearchTerm(''); // Clear search when navigating
+    };
+
+    const handleNavigateUp = (index) => {
+        // Go back to a specific point in breadcrumbs
+        if (index === -1) {
+            setCurrentFolder(null); // Go to Root
+            setFolderPath([]);
+        } else {
+            const newFolder = folderPath[index];
+            setCurrentFolder(newFolder);
+            setFolderPath(folderPath.slice(0, index));
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Navbar */}
@@ -138,6 +171,34 @@ const Dashboard = () => {
             <main className="max-w-6xl mx-auto px-8 py-10">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-2xl font-bold text-slate-900">My Documents</h1>
+                    {/* Breadcrumbs */}
+                    <div className="flex items-center gap-2 mb-6 text-sm text-slate-600">
+                        <button
+                            onClick={() => handleNavigateUp(-1)}
+                            className={`flex items-center hover:text-blue-600 ${!currentFolder ? 'font-bold text-slate-900' : ''}`}
+                        >
+                            <RiHome9Line className="h-4 w-4 mr-1" /> Home
+                        </button>
+
+                        {folderPath.map((folder, index) => (
+                            <div key={folder._id} className="flex items-center gap-2">
+                                <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
+                                <button
+                                    onClick={() => handleNavigateUp(index)}
+                                    className="hover:text-blue-600"
+                                >
+                                    {folder.name}
+                                </button>
+                            </div>
+                        ))}
+
+                        {currentFolder && (
+                            <>
+                                <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
+                                <span className="font-bold text-slate-900">{currentFolder.name}</span>
+                            </>
+                        )}
+                    </div>
                     <div className="relative w-96 mx-4">
                         <AiOutlineFileSearch className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                         <input
@@ -165,10 +226,31 @@ const Dashboard = () => {
                             {uploading ? 'Encrypting...' : 'Secure Upload'}
                         </label>
                     </div>
+                    <button
+                        onClick={() => setIsCreateFolderOpen(true)}
+                        className="mr-3 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition flex items-center gap-2"
+                    >
+                        <TbFolderPlus className="h-4 w-4" /> New Folder
+                    </button>
                 </div>
 
                 {/* Document Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Folder Grid */}
+                    {folders.length > 0 && !searchTerm && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                            {folders.map(folder => (
+                                <div
+                                    key={folder._id}
+                                    onClick={() => handleEnterFolder(folder)}
+                                    className="p-4 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-400 cursor-pointer transition flex flex-col items-center text-center group"
+                                >
+                                    <IoFolderOutline className="h-10 w-10 text-blue-100 group-hover:text-blue-500 transition mb-2 fill-current" />
+                                    <span className="text-sm font-medium text-slate-700 truncate w-full">{folder.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 text-slate-500 text-sm uppercase">
                             <tr>
@@ -269,6 +351,12 @@ const Dashboard = () => {
                 onClose={() => setIsShareOpen(false)}
                 onShare={handleShare}
                 docName={selectedDoc?.fileName}
+            />
+            <CreateFolderModal
+                isOpen={isCreateFolderOpen}
+                onClose={() => setIsCreateFolderOpen(false)}
+                parentId={currentFolder?._id}
+                onSuccess={() => fetchContent()}
             />
         </div>
     );
