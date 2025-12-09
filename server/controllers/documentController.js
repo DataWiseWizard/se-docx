@@ -168,18 +168,26 @@ exports.getDocument = async (req, res) => {
     }
 };
 
-// @desc    Get all documents (Owned + Shared)
-// @route   GET /api/documents
+// @desc    Get all documents (Owned + Shared) with Search
+// @route   GET /api/documents?search=...
 // @access  Private
 exports.getUserDocuments = async (req, res) => {
     try {
-        const documents = await Document.find({
+        const search = req.query.search || '';
+        let query = {
             $or: [
                 { owner: req.user.id },
                 { 'acl.viewer': req.user.id }
             ]
-        })
-            .select('-encryption -gridFsId')
+        };
+
+        //Search Rule: If search term exists, match filename
+        if (search) {
+            query.fileName = { $regex: search, $options: 'i' };
+        }
+
+        const documents = await Document.find(query)
+            .select('-encryption -gridFsId') 
             .populate('owner', 'fullName email')
             .sort({ createdAt: -1 });
 

@@ -43,3 +43,8 @@
 {"level":"info","message":"MongoDB Reconnected!","service":"database"}
 {"level":"warn","message":"MongoDB Disconnected. Attempting to reconnect...","service":"database"}
 {"level":"info","message":"MongoDB Reconnected!","service":"database"}
+{"level":"info","message":"MongoDB Connected: ac-0fnagow-shard-00-02.zipvypj.mongodb.net","service":"database"}
+{"level":"info","message":"MongoDB Connected: ac-0fnagow-shard-00-01.zipvypj.mongodb.net","service":"database"}
+{"level":"info","message":"MongoDB Connected: ac-0fnagow-shard-00-02.zipvypj.mongodb.net","service":"database"}
+{"level":"info","message":"MongoDB Connected: ac-0fnagow-shard-00-00.zipvypj.mongodb.net","service":"database"}
+{"level":"info","message":"MongoDB Connected: ac-0fnagow-shard-00-00.zipvypj.mongodb.net","service":"database"}

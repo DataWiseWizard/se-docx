@@ -10,6 +10,7 @@ import { LuUpload } from "react-icons/lu";
 import { ImFileText2 } from "react-icons/im";
 import { MdOutlineShare } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
+import { AiOutlineFileSearch } from "react-icons/ai";
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -21,6 +22,7 @@ const Dashboard = () => {
     const [showLogs, setShowLogs] = useState(false);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [logs, setLogs] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
     const fetchLogs = async () => {
@@ -36,7 +38,9 @@ const Dashboard = () => {
 
     const fetchDocuments = async () => {
         try {
-            const { data } = await api.get('/documents');
+            setLoading(true);
+            const url = search ? `/documents?search=${search}` : '/documents';
+            const { data } = await api.get(url);
             setDocuments(data);
         } catch (error) {
             console.error("Failed to fetch docs", error);
@@ -44,6 +48,15 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // Wait 500ms after the user stops typing
+        const delayDebounceFn = setTimeout(() => {
+            fetchDocuments(searchTerm);
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
 
     const openShareModal = (doc) => {
         setSelectedDoc(doc);
@@ -125,8 +138,17 @@ const Dashboard = () => {
             <main className="max-w-6xl mx-auto px-8 py-10">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-2xl font-bold text-slate-900">My Documents</h1>
+                    <div className="relative w-96 mx-4">
+                        <AiOutlineFileSearch className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search files..."
+                            className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
 
-                    {/* Hidden File Input + Custom Button */}
                     <div className="relative">
                         <input
                             type="file"
