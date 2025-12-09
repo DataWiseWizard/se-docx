@@ -106,16 +106,15 @@ const Dashboard = () => {
                     <span className="text-xl font-bold tracking-tight">SecureVault</span>
                 </div>
                 <div className="flex items-center gap-6">
-                    <span className="text-sm text-slate-600">
-                        Logged in as <span className="font-semibold text-slate-900">{user?.name}</span>
-                    </span>
-                    <button onClick={fetchLogs} className="mr-4 text-sm text-slate-600 hover:text-blue-600">
-                        <RxActivityLog className="h-4 w-4" />Activity Log
-                    </button>
-                    <button onClick={logout} className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 font-medium">
-                        <HiOutlineLogout className="h-4 w-4" /> Sign Out
-                    </button>
-
+                    <ProfileMenu
+                        user={user}
+                        onLogout={logout}
+                        onOpenLogs={() => {
+                            fetchLogs(); 
+                            // We don't need setShowLogs(true) here because fetchLogs does it,
+                            // but if your fetchLogs doesn't set it, add setShowLogs(true) here.
+                        }}
+                    />
                 </div>
             </nav>
 
