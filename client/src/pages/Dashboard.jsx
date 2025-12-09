@@ -344,7 +344,7 @@ const Dashboard = () => {
                 isOpen={isInfoOpen}
                 onClose={() => setIsInfoOpen(false)}
                 doc={selectedDoc}
-                onRenameSuccess={fetchDocuments} // Refresh the table after rename
+                onRenameSuccess={fetchContent} // Refresh the table after rename
             />
             <ShareModal
                 isOpen={isShareOpen}
