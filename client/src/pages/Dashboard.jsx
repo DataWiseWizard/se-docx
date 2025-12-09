@@ -34,7 +34,6 @@ const Dashboard = () => {
         setIsInfoOpen(true);
     };
 
-    // 1. Fetch Documents on Load
     const fetchDocuments = async () => {
         try {
             const { data } = await api.get('/documents');
@@ -55,7 +54,6 @@ const Dashboard = () => {
         fetchDocuments();
     }, []);
 
-    // 2. Handle File Upload
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -76,7 +74,6 @@ const Dashboard = () => {
         }
     };
 
-    // 3. Handle View Document
     const handleView = async (id) => {
         try {
             const response = await api.get(`/documents/${id}`, {
