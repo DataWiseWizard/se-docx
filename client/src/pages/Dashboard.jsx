@@ -4,7 +4,7 @@ import api from '../utils/api';
 import ProfileMenu from '../components/ProfileMenu';
 import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
-import CreateFolderModal from '../components/CreateFOlderModal';
+import CreateFolderModal from '../components/CreateFolderModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
 import { LuUpload } from "react-icons/lu";
