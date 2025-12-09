@@ -1,14 +1,14 @@
 import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../utils/api';
+import ProfileMenu from '../components/ProfileMenu';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
-import { HiOutlineLogout } from "react-icons/hi";
 import { LuUpload } from "react-icons/lu";
 import { ImFileText2 } from "react-icons/im";
 import { MdOutlineShare } from "react-icons/md";
-import { RxActivityLog } from "react-icons/rx";
+
 
 
 const Dashboard = () => {
