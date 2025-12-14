@@ -48,3 +48,17 @@ exports.getFolderContent = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+// @desc    Get ALL folders (flat list for tree building)
+// @route   GET /api/folders/all
+exports.getAllFolders = async (req, res) => {
+    try {
+        const folders = await Folder.find({ owner: req.user.id })
+            .select('name parent _id')
+            .sort({ name: 1 });
+        
+        res.status(200).json(folders);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
