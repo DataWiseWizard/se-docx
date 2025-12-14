@@ -5,6 +5,7 @@ import ProfileMenu from '../components/ProfileMenu';
 import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
 import CreateFolderModal from '../components/CreateFolderModal';
+import UploadModal from '../components/UploadModal';
 import MoveFileModal from '@/components/MoveFileModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
@@ -24,7 +25,6 @@ const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState(null);
     const [showLogs, setShowLogs] = useState(false);
@@ -38,6 +38,7 @@ const Dashboard = () => {
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 
     const [isMoveOpen, setIsMoveOpen] = useState(false);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
     const navigate = useNavigate();
 
     const fetchLogs = async () => {
@@ -84,26 +85,6 @@ const Dashboard = () => {
     const openShareModal = (doc) => {
         setSelectedDoc(doc);
         setIsShareOpen(true);
-    };
-
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folderId', currentFolder ? currentFolder._id : 'root');
-        setUploading(true);
-        try {
-            await api.post('/documents/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            fetchContent();
-        } catch (error) {
-            alert('Upload failed');
-        } finally {
-            setUploading(false);
-        }
     };
 
     const handleView = async (id) => {
@@ -220,23 +201,13 @@ const Dashboard = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-
-                    <div className="relative">
-                        <input
-                            type="file"
-                            id="file-upload"
-                            className="hidden"
-                            onChange={handleFileUpload}
-                            disabled={uploading}
-                        />
-                        <label
-                            htmlFor="file-upload"
-                            className={`flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md cursor-pointer hover:bg-blue-800 transition ${uploading ? 'opacity-50' : ''}`}
-                        >
-                            <LuUpload className="h-4 w-4" />
-                            {uploading ? 'Encrypting...' : 'Secure Upload'}
-                        </label>
-                    </div>
+                    <button
+                        onClick={() => setIsUploadOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition shadow-sm"
+                    >
+                        <Upload className="h-4 w-4" />
+                        Secure Upload
+                    </button>
                     <button
                         onClick={() => setIsCreateFolderOpen(true)}
                         className="mr-3 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition flex items-center gap-2"
@@ -376,12 +347,18 @@ const Dashboard = () => {
                 parentId={currentFolder?._id}
                 onSuccess={() => fetchContent()}
             />
-            <MoveFileModal 
-                    isOpen={isMoveOpen}
-                    onClose={() => setIsMoveOpen(false)}
-                    doc={selectedDoc}
-                    onSuccess={() => fetchContent()} 
-                />
+            <MoveFileModal
+                isOpen={isMoveOpen}
+                onClose={() => setIsMoveOpen(false)}
+                doc={selectedDoc}
+                onSuccess={() => fetchContent()}
+            />
+            <UploadModal
+                isOpen={isUploadOpen}
+                onClose={() => setIsUploadOpen(false)}
+                currentFolderId={currentFolder?._id} // Pass current location as default
+                onSuccess={() => fetchContent()}
+            />
         </div>
     );
 };
