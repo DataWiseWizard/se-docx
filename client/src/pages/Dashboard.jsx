@@ -205,7 +205,7 @@ const Dashboard = () => {
                         onClick={() => setIsUploadOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition shadow-sm"
                     >
-                        <Upload className="h-4 w-4" />
+                        <LuUpload className="h-4 w-4" />
                         Secure Upload
                     </button>
                     <button
