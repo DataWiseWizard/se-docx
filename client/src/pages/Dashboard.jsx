@@ -168,37 +168,38 @@ const Dashboard = () => {
             </nav>
 
             {/* Main Content */}
-            <main className="max-w-6xl mx-auto px-8 py-10">
+            <main className="max-w-6xl mx-auto px-8 py-6">
+                {/* Breadcrumbs */}
+                <div className="mb-6 p-3 bg-slate-100 rounded-lg border border-slate-200 flex items-center gap-2 text-sm text-slate-600 overflow-x-auto">
+                    <button
+                        onClick={() => handleNavigateUp(-1)}
+                        className={`flex items-center hover:text-blue-600 ${!currentFolder ? 'font-bold text-slate-900' : ''}`}
+                    >
+                        <RiHome9Line className="h-4 w-4 mr-1" /> Home
+                    </button>
+
+                    {folderPath.map((folder, index) => (
+                        <div key={folder._id} className="flex items-center gap-2 shrink-0">
+                            <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
+                            <button
+                                onClick={() => handleNavigateUp(index)}
+                                className="hover:text-blue-600 transition font-medium"
+                            >
+                                {folder.name}
+                            </button>
+                        </div>
+                    ))}
+
+                    {currentFolder && (
+                        <div className="flex items-center gap-2 shrink-0">
+                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                            <span className="font-bold text-slate-900">{currentFolder.name}</span>
+                        </div>
+                    )}
+                </div>
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-2xl font-bold text-slate-900">My Documents</h1>
-                    {/* Breadcrumbs */}
-                    <div className="flex items-center gap-2 mb-6 text-sm text-slate-600">
-                        <button
-                            onClick={() => handleNavigateUp(-1)}
-                            className={`flex items-center hover:text-blue-600 ${!currentFolder ? 'font-bold text-slate-900' : ''}`}
-                        >
-                            <RiHome9Line className="h-4 w-4 mr-1" /> Home
-                        </button>
 
-                        {folderPath.map((folder, index) => (
-                            <div key={folder._id} className="flex items-center gap-2">
-                                <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
-                                <button
-                                    onClick={() => handleNavigateUp(index)}
-                                    className="hover:text-blue-600"
-                                >
-                                    {folder.name}
-                                </button>
-                            </div>
-                        ))}
-
-                        {currentFolder && (
-                            <>
-                                <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
-                                <span className="font-bold text-slate-900">{currentFolder.name}</span>
-                            </>
-                        )}
-                    </div>
                     <div className="relative w-96 mx-4">
                         <AiOutlineFileSearch className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                         <input
@@ -238,15 +239,15 @@ const Dashboard = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     {/* Folder Grid */}
                     {folders.length > 0 && !searchTerm && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
                             {folders.map(folder => (
                                 <div
                                     key={folder._id}
                                     onClick={() => handleEnterFolder(folder)}
-                                    className="p-4 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-400 cursor-pointer transition flex flex-col items-center text-center group"
+                                    className="group p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-blue-300 cursor-pointer transition-all flex flex-col items-center justify-center text-center aspect-square"
                                 >
-                                    <IoFolderOutline className="h-10 w-10 text-blue-100 group-hover:text-blue-500 transition mb-2 fill-current" />
-                                    <span className="text-sm font-medium text-slate-700 truncate w-full">{folder.name}</span>
+                                    <IoFolderOutline className="h-12 w-12 text-blue-100 fill-blue-50 group-hover:text-blue-600 group-hover:fill-blue-100 transition-colors mb-3" />
+                                    <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-800 truncate w-full px-2">{folder.name}</span>
                                 </div>
                             ))}
                         </div>
