@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { uploadDocument, getDocument, shareDocument, getUserDocuments, renameDocument } = require('../controllers/documentController');
+const { uploadDocument, getDocument, shareDocument, getUserDocuments, renameDocument, moveDocument } = require('../controllers/documentController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -20,5 +20,7 @@ router.get('/:id', protect, getDocument);
 router.post('/:id/share', protect, shareDocument);
 
 router.put('/:id/rename', protect, renameDocument);
+
+router.put('/:id/move', protect, moveDocument);
 
 module.exports = router;

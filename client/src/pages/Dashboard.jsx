@@ -5,6 +5,7 @@ import ProfileMenu from '../components/ProfileMenu';
 import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
 import CreateFolderModal from '../components/CreateFolderModal';
+import MoveFileModal from '@/components/MoveFileModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
 import { LuUpload } from "react-icons/lu";
@@ -16,6 +17,8 @@ import { HiOutlineChevronRight } from "react-icons/hi2";
 import { IoFolderOutline } from "react-icons/io5";
 import { RiHome9Line } from "react-icons/ri";
 import { TbFolderPlus } from "react-icons/tb";
+import { LuFolderInput } from "react-icons/lu";
+
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -33,6 +36,8 @@ const Dashboard = () => {
     const [currentFolder, setCurrentFolder] = useState(null);
     const [folderPath, setFolderPath] = useState([]);
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+
+    const [isMoveOpen, setIsMoveOpen] = useState(false);
     const navigate = useNavigate();
 
     const fetchLogs = async () => {
@@ -44,6 +49,11 @@ const Dashboard = () => {
     const openInfoModal = (doc) => {
         setSelectedDoc(doc);
         setIsInfoOpen(true);
+    };
+
+    const openMoveModal = (doc) => {
+        setSelectedDoc(doc);
+        setIsMoveOpen(true);
     };
 
     const fetchContent = async (folderId = currentFolder?._id) => {
@@ -293,6 +303,13 @@ const Dashboard = () => {
                                             <GoEye className="h-4 w-4" />
                                         </button>
                                         <button
+                                            onClick={() => openMoveModal(doc)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                            title="Move to Folder"
+                                        >
+                                            <LuFolderInput className="h-4 w-4" />
+                                        </button>
+                                        <button
                                             onClick={() => openInfoModal(doc)}
                                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
                                             title="File Info & Rename"
@@ -359,6 +376,12 @@ const Dashboard = () => {
                 parentId={currentFolder?._id}
                 onSuccess={() => fetchContent()}
             />
+            <MoveFileModal 
+                    isOpen={isMoveOpen}
+                    onClose={() => setIsMoveOpen(false)}
+                    doc={selectedDoc}
+                    onSuccess={() => fetchContent()} 
+                />
         </div>
     );
 };

@@ -305,3 +305,27 @@ exports.renameDocument = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+// @desc    Move Document to a different folder
+// @route   PUT /api/documents/:id/move
+// @access  Private (Owner Only)
+exports.moveDocument = async (req, res) => {
+    try {
+        const { destinationFolderId } = req.body;
+        
+        const doc = await Document.findById(req.params.id);
+
+        if (!doc) return res.status(404).json({ message: 'Document not found' });
+        if (doc.owner.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to move this file' });
+        }
+        doc.folder = destinationFolderId || null; 
+        
+        await doc.save();
+
+        res.status(200).json({ message: 'Document moved successfully' });
+    } catch (error) {
+        console.error("Move Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
