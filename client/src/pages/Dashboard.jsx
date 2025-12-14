@@ -192,7 +192,7 @@ const Dashboard = () => {
 
                     {currentFolder && (
                         <div className="flex items-center gap-2 shrink-0">
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                            <HiOutlineChevronRight className="h-4 w-4 text-slate-400" />
                             <span className="font-bold text-slate-900">{currentFolder.name}</span>
                         </div>
                     )}
