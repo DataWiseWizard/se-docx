@@ -17,7 +17,10 @@ const app = express();
 
 connectDB();
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
 app.use(cors({
   origin: [process.env.CLIENT_URL,
     'http://localhost:5173',
@@ -44,13 +47,6 @@ const logger = winston.createLogger({
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'Secure Document Sharing API is running',
-    timestamp: new Date()
-  });
-});
-
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/audit', auditRoutes);
@@ -59,7 +55,14 @@ app.use('/api/folders', folderRoutes);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
   app.get(/(.*)/, (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'API Endpoint Not Found' });
+    }
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running. Frontend is served separately in Dev mode.');
   });
 }
 
