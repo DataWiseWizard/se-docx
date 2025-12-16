@@ -21,7 +21,7 @@ const sendEmail = async (options) => {
             throw new Error(data.error.message);
         }
 
-        console.log("Email Sent ID:", data.id);
+        console.log("Email Sent. ID:", data.data ? data.data.id : data.id);
         return data;
     } catch (error) {
         console.error("Resend Error:", error);

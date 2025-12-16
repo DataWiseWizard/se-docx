@@ -20,7 +20,7 @@ const auditLogSchema = new mongoose.Schema({
     },
     status: { 
         type: String, 
-        enum: ['SUCCESS', 'FAILURE', 'DENIED'], 
+        enum: ['SUCCESS', 'FAILURE', 'WARNING', 'PENDING_VERIFICATION'], 
         default: 'SUCCESS' 
     },
     details: { 
