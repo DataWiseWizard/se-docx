@@ -329,3 +329,47 @@ exports.moveDocument = async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 };
+
+// @desc    Bulk Move Documents
+// @route   PUT /api/documents/bulk/move
+// @access  Private
+exports.bulkMoveDocuments = async (req, res) => {
+    try {
+        const { docIds, destinationFolderId } = req.body;
+        await Document.updateMany(
+            { _id: { $in: docIds }, owner: req.user.id },
+            { folder: destinationFolderId || null }
+        );
+
+        res.status(200).json({ message: 'Documents moved successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Bulk Delete Documents
+// @route   DELETE /api/documents/bulk/delete
+// @access  Private
+exports.bulkDeleteDocuments = async (req, res) => {
+    try {
+        const { docIds } = req.body;
+        const docs = await Document.find({ _id: { $in: docIds }, owner: req.user.id });
+
+        const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+            bucketName: 'documents'
+        });
+
+        for (const doc of docs) {
+            try {
+                if (doc.gridFsId) await bucket.delete(doc.gridFsId);
+            } catch (err) {
+                console.warn(`Failed to delete GridFS file ${doc.gridFsId}:`, err.message);
+            }
+        }
+        await Document.deleteMany({ _id: { $in: docIds }, owner: req.user.id });
+        res.status(200).json({ message: 'Documents deleted successfully' });
+    } catch (error) {
+        console.error("Bulk Delete Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};

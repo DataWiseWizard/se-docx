@@ -39,6 +39,8 @@ const Dashboard = () => {
 
     const [isMoveOpen, setIsMoveOpen] = useState(false);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+    const [selectedIds, setSelectedIds] = useState([]);
     const navigate = useNavigate();
 
     const fetchLogs = async () => {
@@ -134,6 +136,35 @@ const Dashboard = () => {
             const newFolder = folderPath[index];
             setCurrentFolder(newFolder);
             setFolderPath(folderPath.slice(0, index));
+        }
+    };
+
+    // Toggle single row
+    const toggleSelect = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    // Toggle "Select All"
+    const toggleSelectAll = () => {
+        if (selectedIds.length === documents.length) {
+            setSelectedIds([]); // Uncheck all
+        } else {
+            setSelectedIds(documents.map(d => d._id)); // Check all
+        }
+    };
+
+    // Bulk Delete Handler
+    const handleBulkDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`)) return;
+
+        try {
+            await api.delete('/documents/bulk/delete', { data: { docIds: selectedIds } }); // Note: DELETE sends data in 'data' key
+            setSelectedIds([]); // Clear selection
+            fetchContent(); // Refresh
+        } catch (error) {
+            alert('Delete failed');
         }
     };
 
@@ -236,6 +267,14 @@ const Dashboard = () => {
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 text-slate-500 text-sm uppercase">
                             <tr>
+                                <th className="px-6 py-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-300"
+                                        checked={documents.length > 0 && selectedIds.length === documents.length}
+                                        onChange={toggleSelectAll}
+                                    />
+                                </th>
                                 <th className="px-6 py-4 font-medium">Document Name</th>
                                 <th className="px-6 py-4 font-medium">Size</th>
                                 <th className="px-6 py-4 font-medium">Date Uploaded</th>
@@ -253,6 +292,14 @@ const Dashboard = () => {
 
                             {documents.map((doc) => (
                                 <tr key={doc._id} className="hover:bg-slate-50 transition">
+                                    <td className="px-6 py-4">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-300"
+                                            checked={selectedIds.includes(doc._id)}
+                                            onChange={() => toggleSelect(doc._id)}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4 flex items-center gap-3">
                                         <div className="p-2 bg-blue-50 text-blue-600 rounded">
                                             <ImFileText2 className="h-5 w-5" />
@@ -328,6 +375,36 @@ const Dashboard = () => {
                         </div>
                     </div>
                 )}
+
+                {selectedIds.length > 0 && (
+                    <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-xl flex items-center gap-6 z-50 animate-in slide-in-from-bottom-4">
+                        <span className="font-medium text-sm">{selectedIds.length} selected</span>
+
+                        <div className="h-4 w-px bg-slate-700"></div> {/* Divider */}
+
+                        <button
+                            onClick={() => setIsMoveOpen(true)} // Re-uses your existing state!
+                            className="flex items-center gap-2 text-sm hover:text-blue-300 transition"
+                        >
+                            <FolderInput className="h-4 w-4" /> Move
+                        </button>
+
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 text-sm hover:text-red-300 transition"
+                        >
+                            <Trash2 className="h-4 w-4" /> Delete
+                        </button>
+
+                        {/* Cancel Button */}
+                        <button
+                            onClick={() => setSelectedIds([])}
+                            className="ml-2 text-slate-400 hover:text-white"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
             </main>
             <FileInfoModal
                 isOpen={isInfoOpen}
@@ -351,7 +428,11 @@ const Dashboard = () => {
                 isOpen={isMoveOpen}
                 onClose={() => setIsMoveOpen(false)}
                 doc={selectedDoc}
-                onSuccess={() => fetchContent()}
+                docIds={selectedIds}
+                onSuccess={() => {
+                    fetchContent();
+                    setSelectedIds([]);
+                }}
             />
             <UploadModal
                 isOpen={isUploadOpen}
@@ -359,6 +440,7 @@ const Dashboard = () => {
                 currentFolderId={currentFolder?._id} // Pass current location as default
                 onSuccess={() => fetchContent()}
             />
+
         </div>
     );
 };

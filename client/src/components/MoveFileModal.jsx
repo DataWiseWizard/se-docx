@@ -5,7 +5,7 @@ import { LuFolderInput } from "react-icons/lu";
 import api from '../utils/api';
 import FolderTree from './FolderTree';
 
-const MoveFileModal = ({ isOpen, onClose, doc, onSuccess }) => {
+const MoveFileModal = ({ isOpen, onClose, doc, docIds, onSuccess }) => {
     const [allFolders, setAllFolders] = useState([]);
     const [selectedFolder, setSelectedFolder] = useState('root');
     const [loading, setLoading] = useState(false);
@@ -29,13 +29,16 @@ const MoveFileModal = ({ isOpen, onClose, doc, onSuccess }) => {
         try {
             const destination = selectedFolder === 'root' ? null : selectedFolder;
 
-            if (destination === doc.folder) {
-                onClose();
-                return;
+            if (docIds && docIds.length > 0) {
+                await api.put('/documents/bulk/move', {
+                    docIds,
+                    destinationFolderId: destination
+                });
+            } else if (doc) {
+                await api.put(`/documents/${doc._id}/move`, {
+                    destinationFolderId: destination
+                });
             }
-            await api.put(`/documents/${doc._id}/move`, {
-                destinationFolderId: destination
-            });
 
             onSuccess();
             onClose();
@@ -46,13 +49,17 @@ const MoveFileModal = ({ isOpen, onClose, doc, onSuccess }) => {
         }
     };
 
+    const titleText = docIds?.length > 0
+        ? `Move ${docIds.length} items`
+        : `Move "${doc?.fileName}"`;
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <LuFolderInput className="h-5 w-5 text-blue-600" />
-                        Move "{doc?.fileName}"
+                        Move {titleText}
                     </DialogTitle>
                 </DialogHeader>
 
