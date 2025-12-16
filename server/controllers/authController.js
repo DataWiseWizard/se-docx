@@ -10,8 +10,18 @@ const crypto = require('crypto');
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const { fullName, email, password, aadhaarId } = req.body;
+
+        if (!verifyAadhaar(aadhaarId)) {
+            return res.status(400).json({ message: 'Invalid Aadhaar Number' });
+        }
+
         let user = await User.findOne({ email });
         if (user) return res.status(400).json({ message: 'User already exists' });
 
@@ -20,7 +30,7 @@ exports.register = async (req, res) => {
             email,
             password,
             aadhaarId,
-            isVerified: false 
+            isVerified: false
         });
 
         const verificationToken = crypto.randomBytes(20).toString('hex');
@@ -48,15 +58,69 @@ exports.register = async (req, res) => {
                 message
             });
 
-            res.status(200).json({ 
+            // Log Audit
+            logAudit({
+                action: 'REGISTER',
+                actor: user._id,
+                ip: req.ip,
+                status: 'PENDING_VERIFICATION',
+                details: 'User registered, verification email sent'
+            });
+
+            res.status(200).json({
                 success: true,
-                message: `Verification email sent to ${user.email}` 
+                message: `Verification email sent to ${user.email}`
             });
 
         } catch (emailError) {
             await user.deleteOne(); // Rollback user creation
+            console.error("Email sending failed:", emailError);
             return res.status(500).json({ message: 'Email service failed. Please try again.' });
         }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Verify User Email
+// @route   PUT /api/auth/verifyemail/:token
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+    try {
+        const token = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        const user = await User.findOne({
+            verificationToken: token,
+            verificationTokenExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or Expired Token' });
+        }
+
+        // Verify User
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpire = undefined;
+
+        await user.save();
+
+        // Log Audit
+        logAudit({
+            action: 'VERIFY_EMAIL',
+            actor: user._id,
+            ip: req.ip,
+            status: 'SUCCESS',
+            details: 'Email verification successful'
+        });
+
+        const jwtToken = generateToken(user._id, user.role);
+        sendTokenResponse(user, jwtToken, res, 200);
 
     } catch (error) {
         console.error(error);
@@ -68,15 +132,33 @@ exports.register = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
-        if (!user || !(await user.matchPassword(password))) {
+        const user = await User.findOne({ email }).select('+password'); // Ensure password is selected if it's hidden by default
+
+        if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        if (!user.isVerified) {
+            return res.status(401).json({
+                message: 'Email not verified. Please check your inbox.'
+            });
+        }
         const token = generateToken(user._id, user.role);
+
+        // Log Audit
         logAudit({
             action: 'LOGIN',
             actor: user._id,
@@ -84,6 +166,7 @@ exports.login = async (req, res) => {
             status: 'SUCCESS',
             details: 'User logged in via Password'
         });
+
         sendTokenResponse(user, token, res, 200);
 
     } catch (error) {
