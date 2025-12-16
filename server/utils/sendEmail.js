@@ -2,7 +2,7 @@ const { Resend } = require('resend');
 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = 'Se-Docx <noreply@vault.pinch-your-pins.site>';
+const FROM_EMAIL = 'Se-Docx <noreply@pinch-your-pins.site>';
 
 const sendEmail = async (options) => {
     try {
