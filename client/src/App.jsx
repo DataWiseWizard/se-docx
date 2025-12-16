@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import EmailSent from './pages/EmailSent';
+import VerifyEmail from './pages/VerifyEmail';
 import './App.css'
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/email-sent" element={<EmailSent />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </Router>

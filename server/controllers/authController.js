@@ -3,39 +3,60 @@ const { verifyAadhaar } = require('../utils/mockAadhaar');
 const generateToken = require('../utils/generateToken');
 const { validationResult } = require('express-validator');
 const logAudit = require('../utils/audit');
+const sendEmail = require('../utils/sendEmail');
+const crypto = require('crypto');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { aadhaarId, fullName, email, password } = req.body;
-
     try {
-        let user = await User.findOne({ $or: [{ email }, { aadhaarId }] });
-        if (user) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
+        const { fullName, email, password, aadhaarId } = req.body;
+        let user = await User.findOne({ email });
+        if (user) return res.status(400).json({ message: 'User already exists' });
 
-        const aadhaarCheck = verifyAadhaar(aadhaarId);
-        if (!aadhaarCheck.isValid) {
-            return res.status(400).json({ message: aadhaarCheck.message });
-        }
-
-        user = await User.create({
-            aadhaarId,
+        user = new User({
             fullName,
             email,
             password,
-            isVerified: true
+            aadhaarId,
+            isVerified: false 
         });
 
-        const token = generateToken(user._id, user.role);
-        sendTokenResponse(user, token, res, 201);
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+        user.verificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
+
+        await user.save();
+
+        const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+
+        const message = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Verify Identity</h2>
+                <p>Hello ${fullName},</p>
+                <p>You registered for a Secure Vault account. Please click below to verify your email:</p>
+                <a href="${verifyUrl}" style="background-color: #0F172A; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">If you did not request this, please ignore this email.</p>
+            </div>
+        `;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Action Required: Verify your Government ID',
+                message
+            });
+
+            res.status(200).json({ 
+                success: true,
+                message: `Verification email sent to ${user.email}` 
+            });
+
+        } catch (emailError) {
+            await user.deleteOne(); // Rollback user creation
+            return res.status(500).json({ message: 'Email service failed. Please try again.' });
+        }
 
     } catch (error) {
         console.error(error);
