@@ -9,16 +9,15 @@ import UploadModal from '../components/UploadModal';
 import MoveFileModal from '@/components/MoveFileModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
-import { LuUpload } from "react-icons/lu";
 import { ImFileText2 } from "react-icons/im";
-import { MdOutlineShare } from "react-icons/md";
+import { MdOutlineShare, MdClose  } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi2";
 import { IoFolderOutline } from "react-icons/io5";
 import { RiHome9Line } from "react-icons/ri";
 import { TbFolderPlus } from "react-icons/tb";
-import { LuFolderInput } from "react-icons/lu";
+import { LuFolderInput, LuTrash2, LuUpload} from "react-icons/lu";
 
 
 const Dashboard = () => {
@@ -386,14 +385,14 @@ const Dashboard = () => {
                             onClick={() => setIsMoveOpen(true)} // Re-uses your existing state!
                             className="flex items-center gap-2 text-sm hover:text-blue-300 transition"
                         >
-                            <FolderInput className="h-4 w-4" /> Move
+                            <LuFolderInput className="h-4 w-4" /> Move
                         </button>
 
                         <button
                             onClick={handleBulkDelete}
                             className="flex items-center gap-2 text-sm hover:text-red-300 transition"
                         >
-                            <Trash2 className="h-4 w-4" /> Delete
+                            <LuTrash2 className="h-4 w-4" /> Delete
                         </button>
 
                         {/* Cancel Button */}
@@ -401,7 +400,7 @@ const Dashboard = () => {
                             onClick={() => setSelectedIds([])}
                             className="ml-2 text-slate-400 hover:text-white"
                         >
-                            <X className="h-4 w-4" />
+                            <MdClose className="h-4 w-4" />
                         </button>
                     </div>
                 )}
@@ -410,7 +409,7 @@ const Dashboard = () => {
                 isOpen={isInfoOpen}
                 onClose={() => setIsInfoOpen(false)}
                 doc={selectedDoc}
-                onRenameSuccess={fetchContent} // Refresh the table after rename
+                onRenameSuccess={fetchContent}
             />
             <ShareModal
                 isOpen={isShareOpen}
@@ -437,7 +436,7 @@ const Dashboard = () => {
             <UploadModal
                 isOpen={isUploadOpen}
                 onClose={() => setIsUploadOpen(false)}
-                currentFolderId={currentFolder?._id} // Pass current location as default
+                currentFolderId={currentFolder?._id}
                 onSuccess={() => fetchContent()}
             />
 
