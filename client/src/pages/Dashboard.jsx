@@ -10,14 +10,14 @@ import MoveFileModal from '@/components/MoveFileModal';
 import { useNavigate } from 'react-router-dom';
 import { GoShieldLock, GoEye } from "react-icons/go";
 import { ImFileText2 } from "react-icons/im";
-import { MdOutlineShare, MdClose  } from "react-icons/md";
+import { MdOutlineShare, MdClose } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi2";
 import { IoFolderOutline } from "react-icons/io5";
 import { RiHome9Line } from "react-icons/ri";
 import { TbFolderPlus } from "react-icons/tb";
-import { LuFolderInput, LuTrash2, LuUpload} from "react-icons/lu";
+import { LuFolderInput, LuTrash2, LuUpload } from "react-icons/lu";
 
 
 const Dashboard = () => {
@@ -178,11 +178,12 @@ const Dashboard = () => {
                 <div className="flex items-center gap-6">
                     <ProfileMenu
                         user={user}
-                        onLogout={logout}
+                        onLogout={async () => {
+                            await logout();
+                            navigate('/login');
+                        }}
                         onOpenLogs={() => {
                             fetchLogs();
-                            // We don't need setShowLogs(true) here because fetchLogs does it,
-                            // but if your fetchLogs doesn't set it, add setShowLogs(true) here.
                         }}
                     />
                 </div>

@@ -206,3 +206,48 @@ const sendTokenResponse = (user, token, res, statusCode) => {
             }
         });
 };
+
+exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'This account is already verified' });
+        }
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+        user.verificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
+
+        await user.save();
+        
+        const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+        const message = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Verify Identity (Resent)</h2>
+                <p>Hello ${user.fullName},</p>
+                <p>You requested a new verification link. Click below to activate your account:</p>
+                <a href="${verifyUrl}" style="background-color: #0F172A; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
+            </div>
+        `;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'New Verification Link - Secure Vault',
+                message
+            });
+            res.status(200).json({ message: 'Verification link sent to your email.' });
+        } catch (err) {
+            return res.status(500).json({ message: 'Email could not be sent' });
+        }
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};

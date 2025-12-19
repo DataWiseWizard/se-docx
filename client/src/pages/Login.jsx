@@ -1,11 +1,16 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import api from '../utils/api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+
+    const [resendStatus, setResendStatus] = useState('');
+    const [loadingResend, setLoadingResend] = useState(false);
+
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -19,6 +24,21 @@ const Login = () => {
         }
     };
 
+    const handleResendLink = async () => {
+        if (!email) return alert("Please enter your email first");
+
+        try {
+            setLoadingResend(true);
+            await api.post('/auth/resend-verification', { email });
+            setResendStatus('New verification link sent! Check your inbox.');
+            setError('');
+        } catch (err) {
+            alert(err.response?.data?.message || "Failed to resend link");
+        } finally {
+            setLoadingResend(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50">
             <div className="w-full max-w-md space-y-8 p-8 bg-white rounded-xl shadow-lg border border-slate-200">
@@ -28,8 +48,23 @@ const Login = () => {
                 </div>
 
                 {error && (
-                    <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                        {error}
+                    <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm flex flex-col gap-2">
+                        <span>{error}</span>
+                        {error.includes('verified') && (
+                            <button
+                                onClick={handleResendLink}
+                                disabled={loadingResend}
+                                className="text-xs font-bold underline text-red-800 hover:text-red-900 text-left"
+                            >
+                                {loadingResend ? "Sending..." : "Click here to resend verification link"}
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {resendStatus && (
+                    <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded text-sm">
+                        {resendStatus}
                     </div>
                 )}
 
