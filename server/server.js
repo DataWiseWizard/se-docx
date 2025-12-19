@@ -1,7 +1,5 @@
 const path = require('path');
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -53,12 +51,20 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/folders', folderRoutes);
 
 
-app.use(express.static(path.join(__dirname, '../client/dist')));
-app.get(/(.*)/, (req, res) => {
+const distPath = path.join(__dirname, '../client/dist');
+app.use(express.static(distPath));
+
+app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ message: 'API Endpoint Not Found' });
   }
-  res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  console.log(`Serving index.html for path: ${req.path}`);
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) {
+      console.error("Error sending index.html:", err);
+      res.status(500).send("Error loading frontend. Build might be missing.");
+    }
+  });
 });
 
 
