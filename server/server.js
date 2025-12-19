@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
@@ -52,23 +53,36 @@ app.use('/api/folders', folderRoutes);
 
 
 const distPath = path.join(__dirname, '../client/dist');
+
+if (fs.existsSync(distPath)) {
+  console.log(`✅ Frontend build found at: ${distPath}`);
+} else {
+  console.error(`❌ CRITICAL ERROR: Frontend build NOT found at: ${distPath}`);
+  console.error(`   Did you run 'npm run build' in the client folder?`);
+}
+
 app.use(express.static(distPath));
 
 app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ message: 'API Endpoint Not Found' });
   }
-  console.log(`Serving index.html for path: ${req.path}`);
-  res.sendFile(path.join(distPath, 'index.html'), (err) => {
-    if (err) {
-      console.error("Error sending index.html:", err);
-      res.status(500).send("Error loading frontend. Build might be missing.");
-    }
-  });
+
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(500).send(`
+      <h1>Server Error</h1>
+      <p>Frontend is missing. The server cannot find <code>index.html</code>.</p>
+      <p>Path looked for: <code>${indexPath}</code></p>
+    `);
+  }
 });
 
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   logger.info(`[Server] Running on port ${PORT}`);
+  logger.info(`[Server] Environment: ${process.env.NODE_ENV || 'undefined'}`);
 });
