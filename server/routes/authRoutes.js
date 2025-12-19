@@ -1,6 +1,6 @@
 const express = require('express');
 const { check } = require('express-validator');
-const { register, login, logout, resendVerification } = require('../controllers/authController');
+const { register, login, logout, verifyEmail, resendVerification } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -19,6 +19,7 @@ const loginValidation = [
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/logout', logout);
+router.put('/verifyemail/:token', verifyEmail);
 router.post('/resend-verification', resendVerification);
 
 module.exports = router;
