@@ -54,29 +54,19 @@ app.use('/api/folders', folderRoutes);
 
 const distPath = path.join(__dirname, '../client/dist');
 
-if (fs.existsSync(distPath)) {
-  console.log(`✅ Frontend build found at: ${distPath}`);
-} else {
-  console.error(`❌ CRITICAL ERROR: Frontend build NOT found at: ${distPath}`);
-  console.error(`   Did you run 'npm run build' in the client folder?`);
-}
+console.log(`Configuring frontend from: ${distPath}`);
 
 app.use(express.static(distPath));
-
-app.get(/.*/, (req, res) => {
+app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ message: 'API Endpoint Not Found' });
   }
-
-  const indexPath = path.join(distPath, 'index.html');
+  const indexPath = path.join(distPath, 'index.html');  
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(500).send(`
-      <h1>Server Error</h1>
-      <p>Frontend is missing. The server cannot find <code>index.html</code>.</p>
-      <p>Path looked for: <code>${indexPath}</code></p>
-    `);
+    console.error(`Frontend build missing at ${indexPath}`);
+    res.status(500).send('Server Error: Frontend build not found. Please check deployment logs.');
   }
 });
 
