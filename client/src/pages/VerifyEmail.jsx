@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
@@ -12,7 +12,12 @@ const VerifyEmail = () => {
     const { setUser } = useContext(AuthContext);
     const [status, setStatus] = useState('verifying');
 
+    const verificationAttempted = useRef(false);
+
     useEffect(() => {
+        if (verificationAttempted.current) return;
+        verificationAttempted.current = true;
+        
         const verify = async () => {
             try {
                 const { data } = await api.put(`/auth/verifyemail/${token}`);
