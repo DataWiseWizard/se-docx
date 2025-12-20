@@ -136,7 +136,7 @@ const Dashboard = () => {
         if (currentFolder) {
             setFolderPath([...folderPath, currentFolder]);
         } else {
-            setFolderPath([...folderPath, { _id: 'root', name: 'Home' }]);
+            setFolderPath([]);
         }
         setCurrentFolder(folder);
         setSearchTerm('');
