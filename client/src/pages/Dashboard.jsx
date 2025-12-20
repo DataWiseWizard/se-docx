@@ -14,7 +14,7 @@ import { MdOutlineShare, MdClose } from "react-icons/md";
 import { BsInfoCircle } from "react-icons/bs";
 import { AiOutlineFileSearch } from "react-icons/ai";
 import { HiOutlineChevronRight } from "react-icons/hi2";
-import { IoFolderOutline } from "react-icons/io5";
+import { IoFolderOutline, IoShareSocialOutline } from "react-icons/io5";
 import { RiHome9Line } from "react-icons/ri";
 import { TbFolderPlus } from "react-icons/tb";
 import { LuFolderInput, LuTrash2, LuUpload } from "react-icons/lu";
@@ -68,10 +68,28 @@ const Dashboard = () => {
                 setFolders([]);
                 return;
             }
+
+            if (folderId === 'shared-virtual') {
+                const { data } = await api.get('/documents/shared');
+                setDocuments(data);
+                setFolders([]);
+                return;
+            }
+
             const endpoint = folderId ? `/folders/${folderId}` : '/folders/root';
             const { data } = await api.get(endpoint);
 
-            setFolders(data.folders);
+            let folderList = data.folders;
+            if (!folderId) {
+                const sharedFolder = {
+                    _id: 'shared-virtual',
+                    name: 'Shared with Me',
+                    isVirtual: true
+                };
+                folderList = [sharedFolder, ...data.folders];
+            }
+
+            setFolders(folderList);
             setDocuments(data.documents);
         } catch (error) {
             console.error("Failed to fetch content", error);
@@ -115,19 +133,16 @@ const Dashboard = () => {
     }
 
     const handleEnterFolder = (folder) => {
-        // Add current folder to path history before moving
         if (currentFolder) {
             setFolderPath([...folderPath, currentFolder]);
         } else {
-            // If creating path from root
             setFolderPath([...folderPath, { _id: 'root', name: 'Home' }]);
         }
         setCurrentFolder(folder);
-        setSearchTerm(''); // Clear search when navigating
+        setSearchTerm('');
     };
 
     const handleNavigateUp = (index) => {
-        // Go back to a specific point in breadcrumbs
         if (index === -1) {
             setCurrentFolder(null); // Go to Root
             setFolderPath([]);
@@ -220,7 +235,9 @@ const Dashboard = () => {
                     )}
                 </div>
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-2xl font-bold text-slate-900">My Documents</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">
+                        {currentFolder?.isVirtual ? 'Shared with Me' : 'My Documents'}
+                    </h1>
 
                     <div className="relative w-96 mx-4">
                         <AiOutlineFileSearch className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -232,34 +249,49 @@ const Dashboard = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button
-                        onClick={() => setIsUploadOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition shadow-sm"
-                    >
-                        <LuUpload className="h-4 w-4" />
-                        Secure Upload
-                    </button>
-                    <button
-                        onClick={() => setIsCreateFolderOpen(true)}
-                        className="mr-3 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition flex items-center gap-2"
-                    >
-                        <TbFolderPlus className="h-4 w-4" /> New Folder
-                    </button>
+                    {!currentFolder?.isVirtual && (
+                        <>
+                            <button
+                                onClick={() => setIsUploadOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition shadow-sm"
+                            >
+                                <LuUpload className="h-4 w-4" />
+                                Secure Upload
+                            </button>
+                            <button
+                                onClick={() => setIsCreateFolderOpen(true)}
+                                className="ml-3 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 transition flex items-center gap-2"
+                            >
+                                <TbFolderPlus className="h-4 w-4" /> New Folder
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* Document Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     {/* Folder Grid */}
                     {folders.length > 0 && !searchTerm && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10 p-6 pb-0">
                             {folders.map(folder => (
                                 <div
                                     key={folder._id}
                                     onClick={() => handleEnterFolder(folder)}
-                                    className="group p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md hover:border-blue-300 cursor-pointer transition-all flex flex-col items-center justify-center text-center aspect-square"
+                                    // --- VIRTUAL FOLDER STYLE ---
+                                    className={`group p-5 border rounded-xl hover:shadow-md cursor-pointer transition-all flex flex-col items-center justify-center text-center aspect-square
+                                        ${folder.isVirtual
+                                            ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
+                                            : 'bg-white border-slate-200 hover:border-blue-300'
+                                        }`}
                                 >
-                                    <IoFolderOutline className="h-12 w-12 text-blue-100 fill-blue-50 group-hover:text-blue-600 group-hover:fill-blue-100 transition-colors mb-3" />
-                                    <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-800 truncate w-full px-2">{folder.name}</span>
+                                    {folder.isVirtual ? (
+                                        <IoShareSocialOutline className="h-12 w-12 text-blue-600 mb-3" />
+                                    ) : (
+                                        <IoFolderOutline className="h-12 w-12 text-blue-100 fill-blue-50 group-hover:text-blue-600 group-hover:fill-blue-100 transition-colors mb-3" />
+                                    )}
+                                    <span className={`text-sm font-semibold truncate w-full px-2 ${folder.isVirtual ? 'text-blue-800' : 'text-slate-700'}`}>
+                                        {folder.name}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -301,10 +333,20 @@ const Dashboard = () => {
                                         />
                                     </td>
                                     <td className="px-6 py-4 flex items-center gap-3">
-                                        <div className="p-2 bg-blue-50 text-blue-600 rounded">
-                                            <ImFileText2 className="h-5 w-5" />
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-blue-50 text-blue-600 rounded">
+                                                <ImFileText2 className="h-5 w-5" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-slate-700">{doc.fileName}</span>
+                                                {doc.owner && doc.owner._id !== user?.id && (
+                                                    <span className="text-xs text-blue-600 flex items-center gap-1">
+                                                        <IoShareSocialOutline className="h-3 w-3" />
+                                                        Shared by {doc.owner.email}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <span className="font-medium text-slate-700">{doc.fileName}</span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 text-sm">
                                         {(doc.size / 1024).toFixed(2)} KB
@@ -320,27 +362,31 @@ const Dashboard = () => {
                                         >
                                             <GoEye className="h-4 w-4" />
                                         </button>
-                                        <button
-                                            onClick={() => openMoveModal(doc)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                            title="Move to Folder"
-                                        >
-                                            <LuFolderInput className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => openInfoModal(doc)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                            title="File Info & Rename"
-                                        >
-                                            <BsInfoCircle className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => openShareModal(doc)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                            title="Share Access"
-                                        >
-                                            <MdOutlineShare className="h-4 w-4" />
-                                        </button>
+                                        {doc.owner && doc.owner._id === user?.id && (
+                                            <>
+                                                <button
+                                                    onClick={() => openMoveModal(doc)}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                    title="Move to Folder"
+                                                >
+                                                    <LuFolderInput className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openInfoModal(doc)}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                    title="File Info & Rename"
+                                                >
+                                                    <BsInfoCircle className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => openShareModal(doc)}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                    title="Share Access"
+                                                >
+                                                    <MdOutlineShare className="h-4 w-4" />
+                                                </button>
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

@@ -55,7 +55,7 @@ exports.uploadDocument = async (req, res) => {
             try {
                 let folderId = req.body.folderId;
                 if (folderId === 'root' || folderId === 'null') folderId = null;
-                
+
                 const newDoc = await Document.create({
                     owner: req.user.id,
                     fileName: req.file.originalname,
@@ -191,7 +191,7 @@ exports.getUserDocuments = async (req, res) => {
         }
 
         const documents = await Document.find(query)
-            .select('-encryption -gridFsId') 
+            .select('-encryption -gridFsId')
             .populate('owner', 'fullName email')
             .sort({ createdAt: -1 });
 
@@ -292,7 +292,7 @@ exports.renameDocument = async (req, res) => {
 
         const oldExt = doc.fileName.split('.').pop();
         const newExt = newName.split('.').pop();
-        
+
         if (oldExt !== newExt) {
             return res.status(400).json({ message: `You cannot change the file extension (.${oldExt})` });
         }
@@ -312,15 +312,15 @@ exports.renameDocument = async (req, res) => {
 exports.moveDocument = async (req, res) => {
     try {
         const { destinationFolderId } = req.body;
-        
+
         const doc = await Document.findById(req.params.id);
 
         if (!doc) return res.status(404).json({ message: 'Document not found' });
         if (doc.owner.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized to move this file' });
         }
-        doc.folder = destinationFolderId || null; 
-        
+        doc.folder = destinationFolderId || null;
+
         await doc.save();
 
         res.status(200).json({ message: 'Document moved successfully' });
@@ -370,6 +370,26 @@ exports.bulkDeleteDocuments = async (req, res) => {
         res.status(200).json({ message: 'Documents deleted successfully' });
     } catch (error) {
         console.error("Bulk Delete Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get ONLY documents shared with the user
+// @route   GET /api/documents/shared
+// @access  Private
+exports.getSharedDocuments = async (req, res) => {
+    try {
+        const docs = await Document.find({
+            'acl.viewer': req.user.id,
+            owner: { $ne: req.user.id }
+        })
+            .select('-encryption -gridFsId')
+            .populate('owner', 'fullName email')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(docs);
+    } catch (error) {
+        console.error('Get Shared Docs Error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };

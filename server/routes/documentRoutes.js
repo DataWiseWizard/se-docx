@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { uploadDocument, getDocument, shareDocument, getUserDocuments, renameDocument, moveDocument, bulkMoveDocuments, bulkDeleteDocuments } = require('../controllers/documentController');
+const { uploadDocument, getDocument, shareDocument, getUserDocuments, getSharedDocuments, renameDocument, moveDocument, bulkMoveDocuments, bulkDeleteDocuments } = require('../controllers/documentController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -12,6 +12,8 @@ const upload = multer({
 });
 
 router.get('/', protect, getUserDocuments);
+
+router.get('/shared', protect, getSharedDocuments);
 
 router.post('/upload', protect, upload.single('file'), uploadDocument);
 
