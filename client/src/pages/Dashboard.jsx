@@ -2,6 +2,8 @@ import { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../utils/api';
 import ProfileMenu from '../components/ProfileMenu';
+import { toast } from "sonner";
+import SkeletonLoader from '../components/SkeletonLoader';
 import FileInfoModal from '@/components/FileInfoModal';
 import ShareModal from '../components/ShareModal';
 import CreateFolderModal from '../components/CreateFolderModal';
@@ -122,13 +124,17 @@ const Dashboard = () => {
 
     const handleShare = async (email, duration) => {
         try {
+            const toastId = toast.loading("Granting access...");
+
             await api.post(`/documents/${selectedDoc._id}/share`, {
                 email,
                 durationInHours: duration
             });
-            alert(`Access granted to ${email} for ${duration} hours.`);
+            toast.dismiss(toastId);
+            toast.success(`Successfully shared with ${email}`);
+            setIsShareOpen(false);
         } catch (error) {
-            alert(error.response?.data?.message || 'Sharing failed');
+            toast.error(error.response?.data?.message || 'Sharing failed');
         }
     }
 
@@ -174,11 +180,15 @@ const Dashboard = () => {
         if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} items?`)) return;
 
         try {
+            const toastId = toast.loading("Deleting files...");
             await api.delete('/documents/bulk/delete', { data: { docIds: selectedIds } }); // Note: DELETE sends data in 'data' key
-            setSelectedIds([]); // Clear selection
-            fetchContent(); // Refresh
+            toast.dismiss(toastId);
+            toast.success("Files deleted permanently");
+
+            setSelectedIds([]);
+            fetchContent();
         } catch (error) {
-            alert('Delete failed');
+            toast.error('Delete failed');
         }
     };
 
@@ -269,130 +279,140 @@ const Dashboard = () => {
                 </div>
 
                 {/* Document Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    {/* Folder Grid */}
-                    {folders.length > 0 && !searchTerm && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10 p-6 pb-0">
-                            {folders.map(folder => (
-                                <div
-                                    key={folder._id}
-                                    onClick={() => handleEnterFolder(folder)}
-                                    // --- VIRTUAL FOLDER STYLE ---
-                                    className={`group p-5 border rounded-xl hover:shadow-md cursor-pointer transition-all flex flex-col items-center justify-center text-center aspect-square
+                {loading ? (
+                    <>
+                        <SkeletonLoader mode="grid" />
+                        <SkeletonLoader mode="table" />
+                    </>
+                ) : (
+                    <>
+                        {/* Folder Grid */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            {folders.length > 0 && !searchTerm && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-10 p-6 pb-0">
+                                    {folders.map(folder => (
+                                        <div
+                                            key={folder._id}
+                                            onClick={() => handleEnterFolder(folder)}
+                                            // --- VIRTUAL FOLDER STYLE ---
+                                            className={`group p-5 border rounded-xl hover:shadow-md cursor-pointer transition-all flex flex-col items-center justify-center text-center aspect-square
                                         ${folder.isVirtual
-                                            ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
-                                            : 'bg-white border-slate-200 hover:border-blue-300'
-                                        }`}
-                                >
-                                    {folder.isVirtual ? (
-                                        <IoShareSocialOutline className="h-12 w-12 text-blue-600 mb-3" />
-                                    ) : (
-                                        <IoFolderOutline className="h-12 w-12 text-blue-100 fill-blue-50 group-hover:text-blue-600 group-hover:fill-blue-100 transition-colors mb-3" />
-                                    )}
-                                    <span className={`text-sm font-semibold truncate w-full px-2 ${folder.isVirtual ? 'text-blue-800' : 'text-slate-700'}`}>
-                                        {folder.name}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 text-slate-500 text-sm uppercase">
-                            <tr>
-                                <th className="px-6 py-4 w-12">
-                                    <input
-                                        type="checkbox"
-                                        className="rounded border-slate-300"
-                                        checked={documents.length > 0 && selectedIds.length === documents.length}
-                                        onChange={toggleSelectAll}
-                                    />
-                                </th>
-                                <th className="px-6 py-4 font-medium">Document Name</th>
-                                <th className="px-6 py-4 font-medium">Size</th>
-                                <th className="px-6 py-4 font-medium">Date Uploaded</th>
-                                <th className="px-6 py-4 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {documents.length === 0 && !loading && (
-                                <tr>
-                                    <td colSpan="4" className="px-6 py-10 text-center text-slate-400">
-                                        No documents found. Upload one to get started.
-                                    </td>
-                                </tr>
-                            )}
-
-                            {documents.map((doc) => (
-                                <tr key={doc._id} className="hover:bg-slate-50 transition">
-                                    <td className="px-6 py-4">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300"
-                                            checked={selectedIds.includes(doc._id)}
-                                            onChange={() => toggleSelect(doc._id)}
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 flex items-center gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-50 text-blue-600 rounded">
-                                                <ImFileText2 className="h-5 w-5" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-slate-700">{doc.fileName}</span>
-                                                {currentFolder?.isVirtual && doc.owner && doc.owner._id !== user?.id && (
-                                                    <span className="text-xs text-blue-600 flex items-center gap-1">
-                                                        <IoShareSocialOutline className="h-3 w-3" />
-                                                        Shared by {doc.owner.email}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 text-sm">
-                                        {(doc.size / 1024).toFixed(2)} KB
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-500 text-sm">
-                                        {new Date(doc.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 text-right flex justify-end gap-3">
-                                        <button
-                                            onClick={() => handleView(doc._id)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                            title="View Decrypted"
+                                                    ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
+                                                    : 'bg-white border-slate-200 hover:border-blue-300'
+                                                }`}
                                         >
-                                            <GoEye className="h-4 w-4" />
-                                        </button>
-                                        {doc.owner && doc.owner._id === user?.id && (
-                                            <>
+                                            {folder.isVirtual ? (
+                                                <IoShareSocialOutline className="h-12 w-12 text-blue-600 mb-3" />
+                                            ) : (
+                                                <IoFolderOutline className="h-12 w-12 text-blue-100 fill-blue-50 group-hover:text-blue-600 group-hover:fill-blue-100 transition-colors mb-3" />
+                                            )}
+                                            <span className={`text-sm font-semibold truncate w-full px-2 ${folder.isVirtual ? 'text-blue-800' : 'text-slate-700'}`}>
+                                                {folder.name}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-slate-500 text-sm uppercase">
+                                    <tr>
+                                        <th className="px-6 py-4 w-12">
+                                            <input
+                                                type="checkbox"
+                                                className="rounded border-slate-300"
+                                                checked={documents.length > 0 && selectedIds.length === documents.length}
+                                                onChange={toggleSelectAll}
+                                            />
+                                        </th>
+                                        <th className="px-6 py-4 font-medium">Document Name</th>
+                                        <th className="px-6 py-4 font-medium">Size</th>
+                                        <th className="px-6 py-4 font-medium">Date Uploaded</th>
+                                        <th className="px-6 py-4 font-medium text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {documents.length === 0 && !loading && (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-10 text-center text-slate-400">
+                                                No documents found. Upload one to get started.
+                                            </td>
+                                        </tr>
+                                    )}
+
+                                    {documents.map((doc) => (
+                                        <tr key={doc._id} className="hover:bg-slate-50 transition">
+                                            <td className="px-6 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-300"
+                                                    checked={selectedIds.includes(doc._id)}
+                                                    onChange={() => toggleSelect(doc._id)}
+                                                />
+                                            </td>
+                                            <td className="px-6 py-4 flex items-center gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-50 text-blue-600 rounded">
+                                                        <ImFileText2 className="h-5 w-5" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-slate-700">{doc.fileName}</span>
+                                                        {currentFolder?.isVirtual && doc.owner && doc.owner._id !== user?.id && (
+                                                            <span className="text-xs text-blue-600 flex items-center gap-1">
+                                                                <IoShareSocialOutline className="h-3 w-3" />
+                                                                Shared by {doc.owner.email}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500 text-sm">
+                                                {(doc.size / 1024).toFixed(2)} KB
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500 text-sm">
+                                                {new Date(doc.createdAt).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 text-right flex justify-end gap-3">
                                                 <button
-                                                    onClick={() => openMoveModal(doc)}
+                                                    onClick={() => handleView(doc._id)}
                                                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                                    title="Move to Folder"
+                                                    title="View Decrypted"
                                                 >
-                                                    <LuFolderInput className="h-4 w-4" />
+                                                    <GoEye className="h-4 w-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => openInfoModal(doc)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                                    title="File Info & Rename"
-                                                >
-                                                    <BsInfoCircle className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => openShareModal(doc)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
-                                                    title="Share Access"
-                                                >
-                                                    <MdOutlineShare className="h-4 w-4" />
-                                                </button>
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                                {doc.owner && doc.owner._id === user?.id && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => openMoveModal(doc)}
+                                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                            title="Move to Folder"
+                                                        >
+                                                            <LuFolderInput className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => openInfoModal(doc)}
+                                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                            title="File Info & Rename"
+                                                        >
+                                                            <BsInfoCircle className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => openShareModal(doc)}
+                                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+                                                            title="Share Access"
+                                                        >
+                                                            <MdOutlineShare className="h-4 w-4" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
+
 
                 {showLogs && (
                     <div className="mt-10 bg-white p-6 rounded-xl border border-slate-200">
