@@ -17,7 +17,7 @@ const VerifyEmail = () => {
     useEffect(() => {
         if (verificationAttempted.current) return;
         verificationAttempted.current = true;
-        
+
         const verify = async () => {
             try {
                 const { data } = await api.put(`/auth/verifyemail/${token}`);
@@ -29,6 +29,7 @@ const VerifyEmail = () => {
                 setStatus('success');
                 setTimeout(() => navigate('/dashboard'), 3000);
             } catch (error) {
+                console.error("Verification error:", error);
                 setStatus('error');
             }
         };
