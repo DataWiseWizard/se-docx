@@ -339,7 +339,7 @@ const Dashboard = () => {
                                             </div>
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-slate-700">{doc.fileName}</span>
-                                                {doc.owner && doc.owner._id !== user?.id && (
+                                                {currentFolder?.isVirtual && doc.owner && doc.owner._id !== user?.id && (
                                                     <span className="text-xs text-blue-600 flex items-center gap-1">
                                                         <IoShareSocialOutline className="h-3 w-3" />
                                                         Shared by {doc.owner.email}
