@@ -5,7 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import EmailSent from './pages/EmailSent';
 import VerifyEmail from './pages/VerifyEmail';
-import { Toaster } 
+import { Toaster } from "@/components/ui/sonner";
 import './App.css'
 
 function App() {
