@@ -181,7 +181,14 @@ exports.getUserDocuments = async (req, res) => {
         let query = {
             $or: [
                 { owner: req.user.id },
-                { 'acl.viewer': req.user.id }
+                {
+                    acl: {
+                        $elemMatch: {
+                            viewer: req.user.id,
+                            validUntil: { $gt: new Date() }
+                        }
+                    }
+                }
             ]
         };
 

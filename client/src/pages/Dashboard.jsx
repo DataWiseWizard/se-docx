@@ -397,6 +397,12 @@ const Dashboard = () => {
                 {showLogs && (
                     <div className="mt-10 bg-white p-6 rounded-xl border border-slate-200">
                         <h2 className="text-lg font-bold mb-4">Security Audit Trail</h2>
+                        <button
+                            onClick={() => setShowLogs(false)}
+                            className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"
+                        >
+                            <MdClose className="h-5 w-5" />
+                        </button>
                         <div className="overflow-auto max-h-60">
                             <table className="w-full text-xs text-left">
                                 <thead className="bg-slate-50 uppercase text-slate-500">
