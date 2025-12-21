@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +14,7 @@ import { HiOutlineLogout } from "react-icons/hi";
 
 
 const ProfileMenu = ({ user, onLogout, onOpenLogs }) => {
+    const navigate = useNavigate();
     const initials = user?.name
         ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
         : 'U';
@@ -42,7 +44,7 @@ const ProfileMenu = ({ user, onLogout, onOpenLogs }) => {
                     <span>Activity Log</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem className="cursor-pointer" disabled>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/profile')}>
                     <FaUserTie className="mr-2 h-4 w-4" />
                     <span>Profile Settings</span>
                 </DropdownMenuItem>

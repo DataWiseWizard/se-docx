@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Document = require('../models/Document');
 const { verifyAadhaar } = require('../utils/mockAadhaar');
 const generateToken = require('../utils/generateToken');
 const { validationResult } = require('express-validator');
@@ -246,6 +247,30 @@ exports.resendVerification = async (req, res) => {
             return res.status(500).json({ message: 'Email could not be sent' });
         }
 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get User Profile & Stats
+// @route   GET /api/auth/me
+// @access  Private
+exports.getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        const docs = await Document.find({ owner: req.user.id });
+        const totalFiles = docs.length;
+        const totalSize = docs.reduce((acc, doc) => acc + doc.size, 0); // Sum of size in bytes
+
+        res.status(200).json({
+            user,
+            stats: {
+                totalFiles,
+                usedStorage: totalSize,
+                totalStorage: 100 * 1024 * 1024 // Hard limit: 100MB for MVP
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
