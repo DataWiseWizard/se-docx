@@ -5,16 +5,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TbFolderPlus } from "react-icons/tb";
 import api from '../utils/api';
+import FolderTree from './FolderTree';
 
 const CreateFolderModal = ({ isOpen, onClose, parentId, onSuccess }) => {
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
+    const [allFolders, setAllFolders] = useState([]);
+    const [selectedParent, setSelectedParent] = useState(parentId || 'root');
+
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedParent(parentId || 'root');
+            const fetchFolders = async () => {
+                try {
+                    const { data } = await api.get('/folders/all');
+                    setAllFolders(data);
+                } catch (error) {
+                    console.error("Failed to load folders");
+                }
+            };
+            fetchFolders();
+        }
+    }, [isOpen, parentId]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await api.post('/folders', { name, parentId });
+            const finalParentId = selectedParent === 'root' ? null : selectedParent;
+            await api.post('/folders', { name, parentId: finalParentId });
             setName('');
             onSuccess();
             onClose();
@@ -46,6 +65,16 @@ const CreateFolderModal = ({ isOpen, onClose, parentId, onSuccess }) => {
                                 placeholder="e.g. Finance"
                                 required
                             />
+                        </div>
+                        <div className="grid grid-cols-4 items-start gap-4 mt-2">
+                            <Label className="text-right mt-2">Location</Label>
+                            <div className="col-span-3">
+                                <FolderTree
+                                    folders={allFolders}
+                                    selectedId={selectedParent}
+                                    onSelect={setSelectedParent}
+                                />
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
