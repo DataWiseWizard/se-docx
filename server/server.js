@@ -8,7 +8,7 @@ const morgan = require('morgan');
 const winston = require('winston');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize'); 
+const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const connectDB = require('./config/db');
 const documentRoutes = require('./routes/documentRoutes');
@@ -17,6 +17,8 @@ const auditRoutes = require('./routes/auditRoutes');
 const folderRoutes = require('./routes/folderRoutes');
 const app = express();
 
+app.set('trust proxy', 1);
+
 connectDB();
 
 app.use(helmet({
@@ -24,8 +26,10 @@ app.use(helmet({
 }));
 
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, 
+  windowMs: 10 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { message: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api', limiter);
@@ -43,7 +47,11 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(mongoSanitize());
+app.use((req, res, next) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  next();
+});
 app.use(hpp());
 
 const logger = winston.createLogger({
@@ -73,7 +81,7 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ message: 'API Endpoint Not Found' });
   }
-  const indexPath = path.join(distPath, 'index.html');  
+  const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
