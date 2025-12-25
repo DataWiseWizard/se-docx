@@ -4,8 +4,9 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
     aadhaarId: {
         type: String,
-        required: true,
+        required: false,
         unique: true,
+        sparse: true,
         index: true
     },
     fullName: {
@@ -18,6 +19,20 @@ const userSchema = new mongoose.Schema({
         unique: true,
         lowercase: true,
         trim: true
+    },
+    password: {
+        type: String,
+        required: false
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     },
     password: {
         type: String,
@@ -36,7 +51,7 @@ const userSchema = new mongoose.Schema({
     verificationTokenExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
-    
+
     createdAt: {
         type: Date,
         default: Date.now
@@ -53,6 +68,7 @@ userSchema.pre('save', async function () {
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    if (!this.password) return false;
     return await bcrypt.compare(enteredPassword, this.password);
 };
 

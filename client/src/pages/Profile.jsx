@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import api from '../utils/api';
 // import { GoShieldLock } from "react-icons/go";
 import { HiOutlineArrowLeft } from "react-icons/hi";
@@ -10,6 +11,7 @@ const Profile = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const { logout } = useContext(AuthContext);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -39,11 +41,26 @@ const Profile = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    const handleDeleteAccount = async () => {
+        const confirmMessage = "Are you sure? This action is IRREVERSIBLE. All your documents and data will be permanently erased.";
+        if (!window.confirm(confirmMessage)) return;
+        if (!window.confirm("Really delete? This is your last chance.")) return;
+        try {
+            await api.delete('/auth/me');
+            toast.success("Account deleted successfully");
+            logout();
+            navigate('/login');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Failed to delete account");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 p-8">
             <div className="max-w-2xl mx-auto">
-                <button 
-                    onClick={() => navigate('/dashboard')} 
+                <button
+                    onClick={() => navigate('/dashboard')}
                     className="flex items-center text-slate-500 hover:text-blue-900 mb-6 transition"
                 >
                     <HiOutlineArrowLeft className="mr-2" /> Back to Vault
@@ -65,7 +82,7 @@ const Profile = () => {
                             <FaUserCheck /> Verified Citizen
                         </div>
                     </div>
-                    
+
                     <div className="p-6 grid grid-cols-2 gap-6">
                         <div>
                             <label className="text-xs uppercase text-slate-500 font-bold">Aadhaar ID</label>
@@ -91,8 +108,8 @@ const Profile = () => {
                         </div>
                         <h2 className="text-3xl font-bold text-slate-900">{formatSize(stats.usedStorage)}</h2>
                         <div className="w-full bg-slate-100 rounded-full h-2 mt-4">
-                            <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                            <div
+                                className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${usedPercent}%` }}
                             ></div>
                         </div>
@@ -102,7 +119,7 @@ const Profile = () => {
                     </div>
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                         <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                                 <FaFileAlt />
                             </div>
@@ -110,6 +127,24 @@ const Profile = () => {
                         </div>
                         <h2 className="text-3xl font-bold text-slate-900">{stats.totalFiles}</h2>
                         <p className="text-sm text-slate-500 mt-1">Encrypted & Secured</p>
+                    </div>
+                </div>
+
+                <div className="mt-12 border-t border-red-200 pt-6">
+                    <h3 className="text-red-800 font-bold mb-2">Danger Zone</h3>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-red-900 font-medium">Delete Account</p>
+                            <p className="text-red-700 text-sm">
+                                Permanently remove your account and all {stats.totalFiles} documents.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleDeleteAccount}
+                            className="bg-white border border-red-300 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-md transition font-medium text-sm"
+                        >
+                            Delete Forever
+                        </button>
                     </div>
                 </div>
             </div>

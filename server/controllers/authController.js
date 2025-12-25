@@ -6,6 +6,8 @@ const { validationResult } = require('express-validator');
 const logAudit = require('../utils/audit');
 const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -224,7 +226,7 @@ exports.resendVerification = async (req, res) => {
         user.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
 
         await user.save();
-        
+
         const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
         const message = `
             <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -359,5 +361,93 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Google Login / Signup
+// @route   POST /api/auth/google
+exports.googleLogin = async (req, res) => {
+    const { token } = req.body;
+
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const { name, email, sub } = ticket.getPayload();
+        let user = await User.findOne({ email });
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = sub;
+                user.authProvider = 'google';
+                await user.save({ validateBeforeSave: false });
+            }
+        } else {
+            user = new User({
+                fullName: name,
+                email: email,
+                googleId: sub,
+                authProvider: 'google',
+                isVerified: true,
+                password: null
+            });
+            await user.save();
+        }
+        const jwtToken = generateToken(user._id, user.role);
+
+        logAudit({
+            action: 'LOGIN_GOOGLE',
+            actor: user._id,
+            ip: req.ip,
+            status: 'SUCCESS',
+            details: 'User logged in via Google OAuth'
+        });
+
+        sendTokenResponse(user, jwtToken, res, 200);
+
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(401).json({ message: 'Google Authentication Failed' });
+    }
+};
+
+// @desc    Delete User Account & All Data
+// @route   DELETE /api/auth/me
+// @access  Private
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const docs = await Document.find({ owner: userId });
+
+        const conn = mongoose.connection;
+        let gridfsBucket = new mongoose.mongo.GridFSBucket(conn.db, {
+            bucketName: 'uploads'
+        });
+
+        for (const doc of docs) {
+            if (doc.gridFsId) {
+                try {
+                    await gridfsBucket.delete(new mongoose.Types.ObjectId(doc.gridFsId));
+                } catch (err) {
+                    console.warn(`Failed to delete GridFS file ${doc.gridFsId}:`, err.message);
+                }
+            }
+        }
+        await Document.deleteMany({ owner: userId });
+        await require('../models/Folder').deleteMany({ owner: userId });
+        await require('../models/AuditLog').deleteMany({ actor: userId });
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ message: 'Account and all data permanently deleted' });
+
+    } catch (error) {
+        console.error("Delete Account Error:", error);
+        res.status(500).json({ message: 'Server Error during deletion' });
     }
 };

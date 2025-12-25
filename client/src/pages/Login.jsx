@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -21,6 +22,17 @@ const Login = () => {
             navigate('/dashboard'); // Redirect to dashboard on success
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            const { data } = await api.post('/auth/google', {
+                token: credentialResponse.credential
+            });
+            window.location.href = '/dashboard';
+        } catch (error) {
+            setError(error.response?.data?.message || 'Google Login failed');
         }
     };
 
@@ -67,6 +79,27 @@ const Login = () => {
                         {resendStatus}
                     </div>
                 )}
+
+                <div className="flex justify-center w-full my-4">
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError('Google Login Failed')}
+                        theme="filled_blue"
+                        shape="pill"
+                        text="signin_with"
+                        width="300"
+                    />
+                </div>
+
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-slate-300" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-slate-500">Or continue with</span>
+                    </div>
+                </div>
+                {/* --------------------------- */}
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
