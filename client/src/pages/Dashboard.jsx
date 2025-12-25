@@ -379,7 +379,7 @@ const Dashboard = () => {
                                                 >
                                                     <GoEye className="h-4 w-4" />
                                                 </button>
-                                                {doc.owner && doc.owner._id === user?.id && !currentFolder?.isVirtual && (
+                                                {!currentFolder?.isVirtual && doc.owner && (doc.owner._id === user?.id || doc.owner._id === user?._id) && (
                                                     <>
                                                         <button
                                                             onClick={() => openMoveModal(doc)}
