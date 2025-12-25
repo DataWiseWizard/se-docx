@@ -34,10 +34,6 @@ const userSchema = new mongoose.Schema({
         enum: ['local', 'google'],
         default: 'local'
     },
-    password: {
-        type: String,
-        required: true
-    },
     role: {
         type: String,
         enum: ['citizen', 'admin', 'issuer'],
