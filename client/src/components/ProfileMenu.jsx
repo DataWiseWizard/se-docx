@@ -21,13 +21,21 @@ const ProfileMenu = ({ user, onLogout, onOpenLogs }) => {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="outline-none">
-                <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-slate-200 transition">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="bg-blue-900 text-white font-medium text-sm">
-                        {initials}
-                    </AvatarFallback>
-                </Avatar>
+            <DropdownMenuTrigger asChild>
+                <button className="relative h-10 w-10 rounded-full overflow-hidden border border-slate-200 hover:ring-2 hover:ring-slate-400 transition focus:outline-none">
+                    {user?.avatar ? (
+                        <img
+                            src={user.avatar}
+                            alt={user.fullName}
+                            className="h-full w-full object-cover"
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <div className="h-full w-full bg-slate-900 flex items-center justify-center text-white font-medium">
+                            {user?.fullName?.charAt(0) || 'U'}
+                        </div>
+                    )}
+                </button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-56">

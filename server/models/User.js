@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    avatar: {
+        type: String,
+        default: ''
+    },
     authProvider: {
         type: String,
         enum: ['local', 'google'],

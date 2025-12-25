@@ -71,8 +71,19 @@ const Profile = () => {
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
                     <div className="bg-slate-900 p-6 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center text-2xl font-bold text-white">
-                                {user.fullName.charAt(0)}
+                            <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-white/20">
+                                {user.avatar ? (
+                                    <img
+                                        src={user.avatar}
+                                        alt="Profile"
+                                        className="h-full w-full object-cover"
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div className="h-full w-full bg-blue-600 flex items-center justify-center text-2xl font-bold text-white">
+                                        {user.fullName.charAt(0)}
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold text-white">{user.fullName}</h1>

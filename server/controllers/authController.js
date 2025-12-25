@@ -377,13 +377,14 @@ exports.googleLogin = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         console.log("2. Token Verified. Payload:", ticket.getPayload());
-        const { name, email, sub } = ticket.getPayload();
+        const { name, email, sub, picture } = ticket.getPayload();
         let user = await User.findOne({ email });
 
         if (user) {
             if (!user.googleId) {
                 user.googleId = sub;
                 user.authProvider = 'google';
+                if (!user.avatar) user.avatar = picture;
                 await user.save({ validateBeforeSave: false });
             }
         } else {
@@ -391,6 +392,7 @@ exports.googleLogin = async (req, res) => {
                 fullName: name,
                 email: email,
                 googleId: sub,
+                avatar: picture,
                 authProvider: 'google',
                 isVerified: true,
                 password: null
