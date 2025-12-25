@@ -6,6 +6,7 @@ const { validationResult } = require('express-validator');
 const logAudit = require('../utils/audit');
 const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
