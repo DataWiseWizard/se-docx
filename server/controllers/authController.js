@@ -371,10 +371,12 @@ exports.googleLogin = async (req, res) => {
     const { token } = req.body;
 
     try {
+        console.log("1. Received Google Token");
         const ticket = await googleClient.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
+        console.log("2. Token Verified. Payload:", ticket.getPayload());
         const { name, email, sub } = ticket.getPayload();
         let user = await User.findOne({ email });
 
@@ -408,7 +410,8 @@ exports.googleLogin = async (req, res) => {
         sendTokenResponse(user, jwtToken, res, 200);
 
     } catch (error) {
-        console.error("Google Auth Error:", error);
+        console.error("GOOGLE AUTH ERROR:", error); 
+        console.error("Backend Expected ID:", process.env.GOOGLE_CLIENT_ID);
         res.status(401).json({ message: 'Google Authentication Failed' });
     }
 };
