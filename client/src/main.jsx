@@ -5,7 +5,7 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 
 
