@@ -88,7 +88,10 @@ const Profile = () => {
                         <div>
                             <label className="text-xs uppercase text-slate-500 font-bold">Aadhaar ID</label>
                             <p className="font-mono text-slate-800 text-lg">
-                                XXXX-XXXX-{user.aadhaarId.slice(-4)}
+                                {user.aadhaarId
+                                    ? `XXXX-XXXX-${user.aadhaarId.slice(-4)}`
+                                    : <span className="text-slate-400 text-sm italic">Not Linked</span>
+                                }
                             </p>
                         </div>
                         <div>
