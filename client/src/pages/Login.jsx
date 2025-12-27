@@ -18,8 +18,9 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await login(email, password);
-            navigate('/dashboard'); // Redirect to dashboard on success
+            const { data } = await api.post('/auth/login', { email, password });
+            login(data.token, data.user);
+            navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
         }
@@ -30,7 +31,8 @@ const Login = () => {
             const { data } = await api.post('/auth/google', {
                 token: credentialResponse.credential
             });
-            window.location.href = '/dashboard';
+            login(data.token, data.user);
+            navigate('/dashboard');
         } catch (error) {
             setError(error.response?.data?.message || 'Google Login failed');
         }
