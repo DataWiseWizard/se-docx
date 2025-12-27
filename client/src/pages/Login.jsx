@@ -31,9 +31,16 @@ const Login = () => {
             const { data } = await api.post('/auth/google', {
                 token: credentialResponse.credential
             });
-            login(data.token, data.user);
-            navigate('/dashboard');
+            
+            if (data.token) {
+                login(data.token, data.user);
+                navigate('/dashboard');
+            } else {
+                setResendStatus(data.message || 'Verification email sent. Please check your inbox.');
+                setError('');
+            }
         } catch (error) {
+            console.error("Google Login Error:", error);
             setError(error.response?.data?.message || 'Google Login failed');
         }
     };

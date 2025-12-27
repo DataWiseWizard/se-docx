@@ -381,38 +381,83 @@ exports.googleLogin = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (user) {
+            if (!user.isVerified) {
+                return res.status(401).json({
+                    message: 'Email not verified. Please check your inbox.'
+                });
+            }
+
             if (!user.googleId) {
                 user.googleId = sub;
                 user.authProvider = 'google';
                 if (!user.avatar) user.avatar = picture;
                 await user.save({ validateBeforeSave: false });
             }
-        } else {
-            user = new User({
-                fullName: name,
-                email: email,
-                googleId: sub,
-                avatar: picture,
-                authProvider: 'google',
-                isVerified: true,
-                password: null
+
+            logAudit({
+                action: 'LOGIN_GOOGLE',
+                actor: user._id,
+                ip: req.ip,
+                status: 'SUCCESS',
+                details: 'User logged in via Google OAuth'
             });
-            await user.save();
+
+            const jwtToken = generateToken(user._id, user.role);
+            sendTokenResponse(user, jwtToken, res, 200);
         }
-        const jwtToken = generateToken(user._id, user.role);
 
-        logAudit({
-            action: 'LOGIN_GOOGLE',
-            actor: user._id,
-            ip: req.ip,
-            status: 'SUCCESS',
-            details: 'User logged in via Google OAuth'
+        user = new User({
+            fullName: name,
+            email: email,
+            googleId: sub,
+            avatar: picture,
+            authProvider: 'google',
+            isVerified: false,
+            password: null
         });
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+        user.verificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.verificationTokenExpire = Date.now() + 24 * 60 * 60 * 1000; // 24 Hours
 
-        sendTokenResponse(user, jwtToken, res, 200);
+        await user.save();
 
+        const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+        const message = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Verify Identity (Google Sign-up)</h2>
+                <p>Hello ${name},</p>
+                <p>You registered using Google. Please click below to complete your account setup:</p>
+                <a href="${verifyUrl}" style="background-color: #0F172A; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a>
+                <p style="margin-top: 20px; font-size: 12px; color: #666;">This link expires in 24 hours.</p>
+            </div>
+        `;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Action Required: Verify your Government ID',
+                message
+            });
+
+            logAudit({
+                action: 'REGISTER_GOOGLE',
+                actor: user._id,
+                ip: req.ip,
+                status: 'PENDING_VERIFICATION',
+                details: 'New Google user registered, verification email sent'
+            });
+            res.status(200).json({
+                success: true,
+                message: `Registration successful! Verification email sent to ${email}.`
+            });
+
+        } catch (emailError) {
+            await user.deleteOne(); // Rollback
+            console.error("Email sending failed:", emailError);
+            return res.status(500).json({ message: 'Email service failed. Please try again.' });
+        }
     } catch (error) {
-        console.error("GOOGLE AUTH ERROR:", error); 
+        console.error("GOOGLE AUTH ERROR:", error);
         console.error("Backend Expected ID:", process.env.GOOGLE_CLIENT_ID);
         res.status(401).json({ message: 'Google Authentication Failed' });
     }
