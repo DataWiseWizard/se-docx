@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const winston = require('winston');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const connectDB = require('./config/db');
@@ -90,6 +91,15 @@ app.use((req, res, next) => {
   }
 });
 
+mongoose.connection.once('open', async () => {
+  try {
+    console.log("Attempting to drop old aadhaarId index...");
+    await mongoose.connection.collection('users').dropIndex('aadhaarId_1');
+    console.log("✅ SUCCESS: Old 'aadhaarId_1' index dropped. Mongoose will recreate it correctly as sparse.");
+  } catch (error) {
+    console.log("ℹ️ Index drop skipped (Index not found or already fixed):", error.message);
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
